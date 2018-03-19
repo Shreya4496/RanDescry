@@ -1,0 +1,26 @@
+import csv
+import joblib
+import os
+import pickle
+import sys
+from sklearn.externals import joblib
+def detection(filename):
+	with open(filename) as csvfile:
+		readCSV=csv.reader(csvfile,delimiter='\t')
+		
+		for row in readCSV:
+
+			clf = joblib.load(os.path.join(os.path.dirname(os.path.realpath(__file__)),'classifier/classifier.pkl'))	 
+
+			res= clf.predict([row])[0]
+			if res==1 :
+				print("File contains ransomware")
+				flag=1
+				break
+
+
+	if flag==0:
+		print("File is legitimate")
+		
+detection('data_h.csv')
+	

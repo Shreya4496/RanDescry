@@ -1,0 +1,89 @@
+import pyshark
+import argparse
+#from detection_ransomware import *
+import csv
+import joblib
+import os
+import pickle
+import sys
+from sklearn.externals import joblib
+
+
+def detection(filename):
+	flag=0
+	with open(filename) as csvfile:
+		readCSV=csv.reader(csvfile,delimiter=',')
+		
+		for row in readCSV:
+
+			clf = joblib.load(os.path.join(os.path.dirname(os.path.realpath(__file__)),'classifier/classifier.pkl'))	 
+
+			res= clf.predict([row])[0]
+			if res==1 :
+				print("File contains ransomware")
+				flag=1
+				break
+
+
+	if flag==0:
+		print("File is legitimate")
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Detect malicious files')
+    parser.add_argument('FILE', help='File to be tested')
+    args = parser.parse_args()
+    cap = pyshark.FileCapture(args.FILE)
+      
+    '''fields=['dest_ip','src_ip','ttl','protocol','ip_checksum','ip_version','ip_len','src_port','dst_port']
+    with open(r'data_h.csv', 'a') as f:
+		    writer = csv.writer(f)
+		    writer.writerow(fields)
+    '''
+    
+    i=0    
+    for packet in enumerate(cap):
+    	
+	    try :
+	
+		    dest_ip= cap[i]['IP'].dst
+                    d_ip=dest_ip.split('.')
+		    ip=256*(256*(256*int(d_ip[0])+int(d_ip[1]))+int(d_ip[2]))+int(d_ip[3])
+		    dest_ip=ip			
+		    src_ip= cap[i]['IP'].src
+		    s_ip=src_ip.split('.')
+		    ip=256*(256*(256*int(s_ip[0])+int(s_ip[1]))+int(s_ip[2]))+int(s_ip[3])
+		    src_ip=ip	
+		    ttl= cap[i]['IP'].ttl 
+		    protocol= cap[i]['IP'].proto
+		    ip_checksum=cap[i]['IP'].checksum
+                    ip_checksum = int(ip_checksum, 16)
+		    ip_version= cap[i]['IP'].version
+		    ip_len= cap[i]['IP'].len
+	    except KeyError as e :
+	     
+		    dest_ip= 0
+		    src_ip= 0
+		    ttl= 0
+		    protocol= 0
+		    ip_checksum=0
+		    ip_version= 0
+		    ip_len= 0
+	    try :
+
+		    src_port=cap[i]['UDP'].srcport
+		    dst_port=cap[i]['UDP'].dstport
+                    
+			
+	    except KeyError as e :
+		    src_port=cap[i]['TCP'].srcport
+		    dst_port=cap[i]['TCP'].dstport	
+	    i=i+1
+            rows=[dest_ip,src_ip,ttl,protocol,ip_checksum,ip_version,ip_len,src_port,dst_port]
+     	    with open(r'data_h.csv', 'a') as f:
+		    writer = csv.writer(f)
+		    writer.writerow(rows)	
+    detection('data_h.csv')
+
+
+
+
